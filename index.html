@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0f14" />
+  <title>CRASH Next Odd – Full Screen</title>
+  <style>
+    :root{
+      --bg:#0a0f14; --bg2:#0d141c; --card:#0e141b; --text:#e9eef6; --muted:#9aa6b2;
+      --orange:#ff6a00; --orange2:#ff9330; --betBlue:#2aa4ff;
+      --ring-blur:10px;
+      --padL:max(12px, env(safe-area-inset-left));
+      --padR:max(12px, env(safe-area-inset-right));
+      --padB:max(14px, env(safe-area-inset-bottom));
+      --padT:max(8px, env(safe-area-inset-top));
+      --gold:#ffd860; --goldGlow:rgba(255,216,96,0.55);
+      --tg1:#29a9ea; --tg2:#1d8cd2; --tgRGB:41,169,234;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 10% -10%,#111b24 0%,transparent 60%),
+        radial-gradient(900px 600px at 120% 110%,#0d1720 0%,transparent 55%),
+        var(--bg);
+    }
+
+    /* App full-screen */
+    #app{position:fixed; inset:0; display:none;
+      grid-template-rows:auto 1fr; gap:6px;
+      padding:var(--padT) var(--padR) var(--padB) var(--padL);
+    }
+    #app.show{display:grid; animation:fadeIn .35s ease-out}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+    .topbar{display:flex; align-items:center; justify-content:center; padding-top:2px}
+    .brand{font-weight:900; font-size:28px; letter-spacing:.6px; text-shadow:0 2px 12px rgba(0,0,0,.35)}
+    .brand .b1{color:#fff} .brand .b2{color:#2aa4ff}
+
+    .panel{position:relative; overflow:hidden; width:100%; height:100%; background:var(--card)}
+    #hackBg{position:absolute; inset:0; z-index:0; background:#050a0c; filter:saturate(1.15) contrast(1.08)}
+    .panel::before{
+      content:""; position:absolute; inset:0; z-index:1;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.45) 60%, rgba(255,106,0,.08) 100%),
+        repeating-linear-gradient(to bottom, rgba(0,255,153,.06) 0 2px, transparent 2px 4px);
+      pointer-events:none;
+    }
+    .panel-content{position:relative; z-index:2; height:100%; padding:12px; display:grid; gap:12px; grid-auto-rows:max-content; overflow-y:auto}
+
+    /* Connect */
+    .connect{background:rgba(42,164,255,.06); border:1px solid rgba(42,164,255,.22); border-radius:14px; padding:12px; display:grid; gap:10px; backdrop-filter:blur(2px)}
+    .connect-title{font-weight:900; font-size:13.5px; letter-spacing:.35px; color:#2aa4ff}
+    .form-grid{display:grid; gap:10px}
+    label{font-size:12.5px; color:#c8d3df; margin-bottom:2px; display:block}
+    .input{width:100%; padding:12px; border-radius:12px; color:#eaf2ff; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); outline:none; transition:border-color .2s, box-shadow .2s}
+    .input::placeholder{color:#93a7bd}
+    .input:focus{border-color:#2aa4ff; box-shadow:0 0 0 3px rgba(42,164,255,.18)}
+    .alert{display:none; border-radius:12px; padding:10px 12px; font-weight:800; letter-spacing:.3px; font-size:13px; text-align:center}
+    .alert.show{display:block; animation:fadeIn .25s ease-out}
+    .alert-success{color:#fff; background:linear-gradient(180deg,#22c55e,#16a34a); border:1px solid #34d399; box-shadow:0 0 0 3px rgba(34,197,94,.18), 0 10px 20px rgba(22,163,74,.35); text-shadow:0 0 10px rgba(34,197,94,.35)}
+    .alert-danger{color:#fff; background:linear-gradient(180deg,#ff3b30,#c81e1e); border:1px solid #ff4d4f; box-shadow:0 0 0 3px rgba(255,59,48,.22), 0 10px 24px rgba(200,30,30,.35); text-shadow:0 0 10px rgba(255,59,48,.45)}
+
+    /* Buttons */
+    .controls{display:grid; gap:10px}
+    .hint{font-size:12.5px; color:#cfd8e3; text-align:center; opacity:.95}
+    button, a.btn{
+      width:100%; appearance:none; border:none; outline:none; cursor:pointer;
+      padding:14px; border-radius:14px; color:#fff; font-weight:900; letter-spacing:.3px; font-size:16px;
+      text-align:center; text-decoration:none;
+      background:linear-gradient(180deg,#ff7a1c,#ff5c00);
+      box-shadow:0 8px 22px rgba(255,106,0,.25), inset 0 1px 0 rgba(255,255,255,.12);
+      transition:transform .06s, box-shadow .2s, filter .2s;
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    }
+    button:active, a.btn:active{transform:translateY(1px)}
+    button:disabled{opacity:.6; cursor:not-allowed; filter:grayscale(.1); box-shadow:none}
+    .btn-yt{background:linear-gradient(180deg,#ff3d3d,#e11d1d); box-shadow:0 8px 22px rgba(225,29,29,.35), inset 0 1px 0 rgba(255,255,255,.12)}
+    .btn-bet{background:linear-gradient(180deg,#2aa4ff,#1e90ff); box-shadow:0 8px 22px rgba(42,164,255,.25), inset 0 1px 0 rgba(255,255,255,.12)}
+    .btn-tg{
+      background:linear-gradient(90deg,var(--tg1),var(--tg2),var(--tg1)); background-size:200% 100%;
+      box-shadow:0 8px 22px rgba(var(--tgRGB),.32), inset 0 1px 0 rgba(255,255,255,.12);
+      position:relative; overflow:hidden;
+      animation:slideBg 3s linear infinite, glowPulse 2.2s ease-in-out infinite;
+    }
+    .btn-tg::before{
+      content:""; position:absolute; top:0; bottom:0; left:-40%; width:40%; transform:skewX(-20deg);
+      background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0));
+      animation:shine 2.8s ease-in-out infinite; pointer-events:none;
+    }
+    @keyframes slideBg{0%{background-position:0 0}100%{background-position:-200% 0}}
+    @keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 rgba(var(--tgRGB),.25),0 8px 22px rgba(var(--tgRGB),.32)}50%{box-shadow:0 0 0 6px rgba(var(--tgRGB),.12),0 10px 26px rgba(var(--tgRGB),.45)}}
+    @keyframes shine{0%{left:-40%}55%{left:140%}100%{left:140%}}
+
+    /* Special note */
+    .special{background:rgba(255,106,0,.07); border:1px solid rgba(255,106,0,.25); border-radius:14px; padding:12px; backdrop-filter:blur(2px)}
+    .special-title{font-weight:800; font-size:13px; letter-spacing:.3px; color:var(--orange2); margin-bottom:6px}
+    .special-body{font-size:12.8px; color:#dbe4ee; line-height:1.5}
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; background:linear-gradient(180deg,#ff7a1c,#ff5c00); color:#fff; font-weight:900; font-size:12px; letter-spacing:.5px; box-shadow:0 4px 12px rgba(255,106,0,.25)}
+    .mandatory{
+      margin-top:10px; padding:10px 12px; border-radius:10px; color:#fff;
+      background:linear-gradient(180deg,#ff3b30,#c81e1e); border:1px solid #ff4d4f;
+      box-shadow:0 0 0 3px rgba(255,59,48,.16), 0 10px 22px rgba(200,30,30,.35);
+      font-weight:800; font-size:13px; letter-spacing:.3px;
+    }
+
+    /* Odds (gold) */
+    .odd-display{text-align:center}
+    #oddValue{font-size:72px; font-weight:900; letter-spacing:1px; color:var(--gold); text-shadow:0 0 16px var(--goldGlow), 0 2px 0 rgba(0,0,0,.25); margin:6px 0 0}
+    .pop{animation:pop .45s cubic-bezier(.22,1.14,.38,1)}
+    @keyframes pop{0%{transform:scale(.9); filter:brightness(1.1)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+    /* Horizontal analysis line (shows during countdown) */
+    .analysisline{
+      position:relative; height:56px; display:none; margin-top:2px;
+      filter: drop-shadow(0 0 8px var(--goldGlow));
+      --analysis-dur: 7s; /* will override from JS */
+    }
+    .analysisline.show{ display:block; animation: fadeIn .2s ease-out; }
+    .analysisline .grid{
+      position:absolute; inset:0;
+      background: repeating-linear-gradient(to right, rgba(255,216,96,0.08) 0 1px, transparent 1px 10px);
+      opacity:.7;
+    }
+    .analysisline .line{
+      position:absolute; left:0; right:0; top:50%;
+      height:2px; transform:translateY(-50%);
+      background: linear-gradient(90deg, transparent, rgba(255,216,96,.65), transparent);
+      box-shadow: 0 0 14px rgba(255,216,96,.45);
+    }
+    .analysisline .sweep{
+      position:absolute; top:50%; transform:translateY(-50%);
+      left:-20%; width:18%; height:3px; border-radius:2px;
+      background: linear-gradient(90deg, rgba(255,216,96,0), rgba(255,216,96,.95), rgba(255,216,96,0));
+      box-shadow: 0 0 12px rgba(255,216,96,.45);
+      animation: sweepX 1.4s linear infinite;
+    }
+    @keyframes sweepX{ from{ left:-20%; } to{ left:120%; } }
+
+    /* NEW: Aviator icon moving on the analysis line */
+    .analysisline .plane{
+      position:absolute; top:50%; left:-10%;
+      transform: translate(-50%, -50%) rotate(-2deg);
+      font-size:20px; color:#ffd860;
+      text-shadow: 0 0 10px rgba(255,216,96,.6);
+      opacity:.95;
+    }
+    .analysisline .plane.run{
+      animation: planeX var(--analysis-dur) linear 1 both;
+    }
+    @keyframes planeX{
+      from{ left:-10%; }
+      to  { left:110%; }
+    }
+
+    /* Countdown */
+    .countdown{display:grid; place-items:center}
+    .cd-wrap{position:relative; width:120px; height:120px}
+    .cd-ring{
+      --p:0;
+      position:absolute; inset:0; border-radius:50%;
+      background:conic-gradient(var(--orange) calc(var(--p) * 1turn), rgba(255,255,255,.08) 0);
+      filter:drop-shadow(0 0 10px rgba(255,106,0,.35));
+      display:grid; place-items:center;
+    }
+    .cd-ring::after{content:""; width:92px; height:92px; border-radius:50%; background:rgba(10,15,20,.85); box-shadow:inset 0 0 0 2px rgba(255,255,255,.05); backdrop-filter:blur(2px)}
+    .cd-number{position:absolute; inset:0; display:grid; place-items:center; font-weight:800; font-size:32px; letter-spacing:.5px; color:#eafff6; text-shadow:0 0 10px rgba(0,255,153,.45)}
+
+    /* History */
+    .history{margin-top:6px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px}
+    .history-title{font-size:12.5px; color:#c8d3df; margin-bottom:8px; font-weight:800; letter-spacing:.3px}
+    .history-list{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{padding:6px 10px; border-radius:999px; background:linear-gradient(180deg,#101820,#0c141c); border:1px solid rgba(255,255,255,.08); color:var(--gold); font-weight:900; font-size:13px; letter-spacing:.3px; text-shadow:0 0 10px var(--goldGlow)}
+
+    /* Splash */
+    #splash{position:fixed; inset:0; display:grid; place-items:center; gap:18px; padding:40px 24px; transition:opacity .6s ease, transform .6s ease;
+      background:
+        radial-gradient(1200px 800px at 10% -10%,#111b24 0%,transparent 60%),
+        radial-gradient(900px 600px at 120% 110%,#0d1720 0%,transparent 55%),
+        var(--bg);
+    }
+    #splash.hide{opacity:0; transform:translateY(-8px); pointer-events:none}
+    .logo-wrap{display:grid; place-items:center}
+    .ring{position:relative; width:190px; height:190px; border-radius:50%; display:grid; place-items:center; isolation:isolate}
+    .ring::before{
+      content:""; position:absolute; inset:-12px; border-radius:50%;
+      background:conic-gradient(from 0deg, rgba(255,106,0,0) 0deg, rgba(255,106,0,0) 320deg, rgba(255,185,120,1) 360deg);
+      -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 14px));
+              mask:radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 14px));
+      animation:ringSweep 2.2s linear infinite; filter:drop-shadow(0 0 var(--ring-blur) rgba(255,106,0,.8))
+    }
+    .ring::after{content:""; position:absolute; inset:0; border-radius:50%; box-shadow:inset 0 0 0 2px rgba(255,106,0,.45), inset 0 0 25px rgba(255,106,0,.35)}
+    @keyframes ringSweep{to{transform:rotate(1turn)}}
+    .logo{width:160px; height:160px; border-radius:50%; display:grid; place-items:center; background:radial-gradient(140px 140px at 50% 45%, rgba(255,106,0,.25), transparent 60%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+    .logo .plane{font-size:44px; color:var(--orange); text-shadow:0 0 14px rgba(255,106,0,.5)}
+    .brand-splash{margin-top:6px; font-weight:800; letter-spacing:2px; font-size:16px; color:var(--orange2); text-shadow:0 0 8px rgba(255,106,0,.35)}
+    .splash-text{font-size:14px; color:var(--muted)}
+
+    @media (prefers-reduced-motion: reduce){
+      .ring::before{animation:none}
+      .pop{animation:none}
+      .btn-tg{animation:none} .btn-tg::before{display:none}
+      .analysisline .sweep{animation:none}
+      .analysisline .plane.run{animation:none}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash -->
+  <div id="splash">
+    <div class="logo-wrap">
+      <div class="ring">
+        <div class="logo">
+          <div class="plane">✈</div>
+          <div class="brand-splash">CRASH</div>
+        </div>
+      </div>
+    </div>
+    <div class="splash-text">Loading…</div>
+  </div>
+
+  <!-- App -->
+  <main id="app">
+    <div class="topbar">
+      <div class="brand"><span class="b1">1X</span><span class="b2">BET</span></div>
+    </div>
+
+    <div id="panel" class="panel">
+      <canvas id="hackBg"></canvas>
+
+      <div class="panel-content">
+        <!-- 1XBET SYSTEM CONNECT -->
+        <div class="connect">
+          <div class="connect-title">1XBET SYSTEM CONNECT</div>
+
+          <!-- YouTube -->
+          <a class="btn btn-yt" href="https://youtu.be/IhUVA07olYo?si=kMF-g_xoPpUq8BQ-" target="_blank" rel="noopener noreferrer">
+            <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="4" fill="#ff0000"></rect>
+              <path d="M10 9l6 3-6 3V9z" fill="#ffffff"></path>
+            </svg>
+            How To Registration
+          </a>
+
+          <div class="form-grid">
+            <div>
+              <label for="xbId">your 1xbet id</label>
+              <input id="xbId" class="input" placeholder="Enter your 1xbet ID" inputmode="numeric" autocomplete="off" />
+            </div>
+            <div>
+              <label for="xbPass">password</label>
+              <input id="xbPass" class="input" type="password" placeholder="Enter password" autocomplete="off" />
+            </div>
+            <button id="btnConnect" class="btn-bet">SYSTEM CONNECT</button>
+            <div id="connectMsg" class="alert" role="status" aria-live="polite"></div>
+
+            <!-- Telegram -->
+            <a id="btnTg" class="btn btn-tg" href="https://t.me/nishanservice" target="_blank" rel="noopener noreferrer" aria-label="contact system manneger on Telegram">
+              <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#ffffff" d="M3.4 2.29a.75.75 0 01.82-.06l16.5 9a.75.75 0 010 1.32l-16.5 9a.75.75 0 01-1.1-.85l2.13-7.12a.75.75 0 01.43-.48L13.5 12 5.18 8.9a.75.75 0 01-.43-.48L2.1 3.2a.75.75 0 011.3-.91z"/>
+              </svg>
+              contact system manneger
+            </a>
+          </div>
+        </div>
+
+        <!-- Special note -->
+        <div class="special">
+          <div class="special-title">විශේෂ උපදෙස්</div>
+          <div class="special-body">
+            99.9% ක් නිවැරදි signal ලබා ගත හැක්කේ <span class="badge">VIPCNA</span> Promo Code යොදා නිර්මාණය කර ඇති ගිණුම් සඳහා පමණයි / හේතුව :- එම කෝඩ් එකෙන් තියෙන හැම 1xbet account එකකම එකම Crash චාට් පැටන් odd generate වීම හා එම කෝඩ් එකට අදාල 1xbet account වලට Signal Generate වීම ...
+          </div>
+          <div class="mandatory">
+            අනිවාර්යයයි :- Promo Code ( VIPCNA ) කෝඩ් එකෙන් අලුත් 1xbet ගිණුමක් සෑදීම සහා personal imformation  සම්පුර්ණයෙන් fill කිරීම .
+          </div>
+        </div>
+
+        <!-- Odds -->
+        <div class="odd-display"><div id="oddValue">00.00X</div></div>
+
+        <!-- Horizontal analysis line (countdown only) -->
+        <div id="analysisLine" class="analysisline" aria-hidden="true">
+          <div class="grid"></div>
+          <div class="line"></div>
+          <div class="sweep"></div>
+          <div id="analysisPlane" class="plane">✈</div>
+        </div>
+
+        <!-- Countdown -->
+        <div class="countdown">
+          <div id="cdWrap" class="cd-wrap">
+            <div id="cdRing" class="cd-ring" style="--p:0;"></div>
+            <div id="cdNum" class="cd-number">7</div>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+          <button id="btnNext">Next Odd</button>
+          <div class="hint">( සෑම odd එකක් ආරම්භයේදීම next odd බටන් එක clik කිරීමෙන් පසුව ඊලග odd එක ලබා ගත හැක )</div>
+        </div>
+
+        <!-- Odd History -->
+        <div class="history">
+          <div class="history-title">Odd History (අවසන් 10)</div>
+          <div id="histList" class="history-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Elements
+    const splash = document.getElementById('splash');
+    const app = document.getElementById('app');
+    const panel = document.getElementById('panel');
+    const hackCanvas = document.getElementById('hackBg');
+    const hctx = hackCanvas.getContext('2d');
+
+    // Connect
+    const idInput = document.getElementById('xbId');
+    const passInput = document.getElementById('xbPass');
+    const connectBtn = document.getElementById('btnConnect');
+    const connectMsg = document.getElementById('connectMsg');
+
+    // Odds/Countdown/Analysis/History
+    const btn = document.getElementById('btnNext');
+    const oddValue = document.getElementById('oddValue');
+    const cdNum = document.getElementById('cdNum');
+    const cdRing = document.getElementById('cdRing');
+    const analysisLine = document.getElementById('analysisLine');
+    const analysisPlane = document.getElementById('analysisPlane');
+    const histList = document.getElementById('histList');
+    const historyData = [];
+
+    let timer = null, triedFS = false, rafId = null, scrambleInterval = null;
+
+    function tryFullscreen(){
+      if (triedFS) return; triedFS = true;
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (req){ try{ req.call(el); }catch(e){} }
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        splash.classList.add('hide');
+        setTimeout(() => {
+          app.classList.add('show');
+          initHackBg();
+          if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches){ animateHackBg(); }
+          updateHistoryDOM();
+        }, 350);
+      }, 1000);
+    });
+
+    // Format: 2 int + 2 dec + X
+    function formatOdd(x){
+      const s = Number(x).toFixed(2); const [i,d] = s.split('.');
+      return i.padStart(2,'0') + '.' + d + 'X';
+    }
+    // Random odd [1.10, 3.29]
+    function randomOdd(){
+      const min=1.10, max=3.29;
+      const val=min + Math.random()*(max-min);
+      return Math.min(max, Math.max(min, Math.round(val*100)/100));
+    }
+    function setProgress(p){ cdRing.style.setProperty('--p', Math.max(0, Math.min(1, p))); }
+    function showOdd(x){
+      oddValue.textContent = formatOdd(x);
+      oddValue.classList.remove('pop'); void oddValue.offsetWidth; oddValue.classList.add('pop');
+    }
+
+    // Analysis controls (horizontal line + aviator)
+    function startAnalysis(seconds){
+      analysisLine.style.setProperty('--analysis-dur', seconds + 's');
+      analysisLine.classList.add('show');
+
+      // start plane animation (restart by toggling class)
+      analysisPlane.classList.remove('run');
+      void analysisPlane.offsetWidth;
+      analysisPlane.classList.add('run');
+
+      // digit scramble
+      if (scrambleInterval) clearInterval(scrambleInterval);
+      scrambleInterval = setInterval(() => {
+        oddValue.textContent = formatOdd(randomOdd());
+      }, 110);
+    }
+    function stopAnalysis(){
+      analysisLine.classList.remove('show');
+      analysisPlane.classList.remove('run');
+      if (scrambleInterval){ clearInterval(scrambleInterval); scrambleInterval = null; }
+    }
+
+    // History
+    function addToHistory(x){
+      const f = formatOdd(x);
+      historyData.unshift(f);
+      if (historyData.length>10) historyData.pop();
+      updateHistoryDOM();
+    }
+    function updateHistoryDOM(){
+      histList.innerHTML='';
+      if (historyData.length===0){
+        const empty=document.createElement('div'); empty.className='chip'; empty.textContent='—'; histList.appendChild(empty); return;
+      }
+      historyData.forEach(v=>{
+        const chip=document.createElement('div'); chip.className='chip'; chip.textContent=v; histList.appendChild(chip);
+      });
+    }
+
+    // Countdown
+    function startCountdown(seconds=7){
+      if (timer) clearInterval(timer);
+      btn.disabled = true; btn.textContent = 'Waiting…';
+
+      tryFullscreen();
+      startAnalysis(seconds);
+
+      let t = seconds; cdNum.textContent = t; setProgress(0);
+      const total = seconds;
+      timer = setInterval(()=>{
+        t--;
+        const p = (total - t) / total;
+        setProgress(p);
+        cdNum.textContent = t;
+
+        if (t<=0){
+          clearInterval(timer); timer=null; setProgress(1);
+          stopAnalysis();
+          const odd = randomOdd();
+          showOdd(odd); addToHistory(odd);
+          btn.disabled = false; btn.textContent = 'Next Odd';
+        }
+      }, 1000);
+    }
+    btn.addEventListener('click', () => startCountdown(7));
+
+    // Connect (VIPCNA => success)
+    connectBtn.addEventListener('click', (e)=>{
+      e.preventDefault(); tryFullscreen();
+      const id=idInput.value.trim(), pw=passInput.value.trim();
+      connectMsg.className='alert'; connectMsg.textContent='';
+      if (pw==='VIPCNA' && id.length>0){
+        connectMsg.textContent='✓ SYSTEM CONNECT SUCCESS';
+        connectMsg.classList.add('alert-success','show');
+        connectBtn.textContent='CONNECTED'; connectBtn.disabled=true;
+      } else {
+        connectMsg.textContent='✗ SYSTEM CONNECT FAIL';
+        connectMsg.classList.add('alert-danger','show');
+      }
+    });
+
+    // Hacker matrix background
+    const CHARS=('アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴン'+'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZVIPCNA').split('');
+    const FONT_SIZE=14;
+    let columns=0, drops=[], cssW=0, cssH=0;
+
+    function initHackBg(){
+      const dpr=Math.min(2, window.devicePixelRatio||1);
+      const rect=panel.getBoundingClientRect();
+      cssW=Math.max(1, Math.floor(rect.width)); cssH=Math.max(1, Math.floor(rect.height));
+      hackCanvas.width=Math.floor(cssW*dpr); hackCanvas.height=Math.floor(cssH*dpr);
+      hackCanvas.style.width=cssW+'px'; hackCanvas.style.height=cssH+'px';
+      hctx.setTransform(dpr,0,0,dpr,0,0); hctx.clearRect(0,0,cssW,cssH);
+      hctx.font=`${FONT_SIZE}px monospace`; hctx.textBaseline='top';
+      columns=Math.floor(cssW/FONT_SIZE); drops=Array.from({length:columns},()=>Math.floor(Math.random()*-40));
+    }
+    function drawHackFrame(){
+      hctx.fillStyle='rgba(0,8,10,.15)'; hctx.fillRect(0,0,cssW,cssH);
+      for (let i=0;i<columns;i++){
+        const char=CHARS[(Math.random()*CHARS.length)|0], x=i*FONT_SIZE, y=drops[i]*FONT_SIZE;
+        hctx.shadowColor='rgba(0,255,153,.35)'; hctx.shadowBlur=8; hctx.fillStyle='rgba(0,255,153,.88)';
+        hctx.fillText(char,x,y);
+        drops[i]+= (Math.random()<0.06?2:1);
+        if (y>cssH && Math.random()>0.975){ drops[i]=Math.floor(Math.random()*-20); }
+      }
+    }
+    function animateHackBg(){ cancelAnimationFrame(rafId); const loop=()=>{ drawHackFrame(); rafId=requestAnimationFrame(loop) }; loop(); }
+    function drawHackStatic(){ drawHackFrame(); }
+
+    window.addEventListener('resize', ()=>{ initHackBg(); });
+  </script>
+</body>
+</html>
